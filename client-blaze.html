@@ -1,0 +1,37 @@
+<template name="sChatBox">
+    <div id="s-chat-box" class="s-chat-box js-chat-box {{#if isAdminActive}}s-chat-box-admin-is-online{{else}}s-chat-box-admin-is-offline{{/if}}">
+        <div id="s-chat-box-header" class="s-chat-box-header js-chat-box-close">
+            <div class="s-chat-header-title">
+                <span class="s-chat-presence-indicator"></span>
+                {{sChatHeaderTitle}}
+            </div>
+        </div>
+        <div id="s-chat-messages" class="s-chat-messages js-chat-messages">
+            {{#if isWelcomeMessage}}
+                {{> sChatBoxWelcomeMessage}}
+            {{/if}}
+            {{#each sChatMessages}}
+                {{#unless isFromClient}}
+                    <div class="s-chat-message-item-avatar"></div>
+                {{/unless}}
+                <div class="s-chat-message-item {{#if isFromClient}}s-chat-message-item-client{{/if}}">
+                    <div class="message">{{msg}}</div>
+                </div>
+            {{/each}}
+        </div>
+        <div id="s-chat-powered-by" class="s-chat-powered-by">
+            Powered by <a href="https://www.simplechat.support">www.SimpleChat.Support</a>
+        </div>
+        <textarea id="s-chat-submit-input" class="s-chat-submit-input {{#if isIOS}}s-chat-submit-input-ios{{/if}} js-chat-submit-input" rows="1" placeholder="{{sChatInputPlaceholder}}"></textarea>
+    </div>
+    <div id="s-chat-box-opener" class="s-chat-box-opener js-chat-box-open"></div>
+</template>
+
+<template name="sChatBoxWelcomeMessage">
+    <div id="s-chat-box-welcome-message" class="s-chat-box-welcome-message s-chat-message-item">
+        <div id="s-chat-box-welcome-avatar" class="s-chat-box-welcome-avatar s-chat-message-item-avatar"></div>
+        <div id="s-chat-box-welcome-message-text" class="s-chat-box-welcome-message-text message">
+            {{sChatWelcomeMessage}}
+        </div>
+    </div>
+</template>
