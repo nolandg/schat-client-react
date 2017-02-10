@@ -7,6 +7,4 @@ checkNpmVersions({
   'react-helmet': '^3.1.0',
 }, 'noland:schat-client-react');
 
-console.log('client-react.js used');
-
 export { SChatBox, SChatBoxOpener };

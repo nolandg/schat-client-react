@@ -1,11 +1,73 @@
+import { Meteor } from 'meteor/meteor';
 import React, { Component } from 'react';
 import { createContainer } from 'meteor/react-meteor-data';
-// import { ReactiveVar } from 'meteor/reactive-var';
 import sChat from 'meteor/schat:client-core';
+import SChatBoxOpener from './SChatBoxOpener';
+
+if (Meteor.isClient) {
+  Meteor.startup(() => {
+    sChat.init('BLg9Ndgj58tXPMQFY', {
+      ssl: false,
+      welcomeMessage: 'Hi, how can I help you?',
+      hostName: 'localhost:3042',
+      labels: {
+        sendPlaceholder: 'Send the message...',
+        headerTitle: 'Welcome on my website!',
+      },
+    });
+  });
+}
 
 class SChatBoxContained extends Component {
   constructor(props) {
     super(props);
+
+    // Can't figure out how to make this isomophic to not screw up the SSR
+    // const isIOS = navigator.userAgent && navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    this.isIOS = false;
+
+    this.state = {
+      isOpen: false,
+      message: '',
+    };
+  }
+
+  componentDidMount = () => {
+
+  }
+
+  handleOpenerClick = () => {
+    this.setState({ isOpen: true });
+    // Meteor.setTimeout(() => {
+    //   tmpl.find('.s-chat-submit-input').focus();
+    // }, 0);
+  }
+  handleCloseClick = () => {
+    this.setState({ isOpen: false });
+  }
+
+  handleKeyDown = (event) => {
+    if (event.keyCode !== 13) return;
+    console.log(this.state.message);
+    if (!this.state.message.trim()) return;
+
+    event.preventDefault();
+    sChat.ddp.call(
+      'addChatMessage',
+      this.state.message,
+      sChat.clientAppId,
+      sChat.userSessionId,
+      true // is from client
+    );
+
+    this.setState({ message: '' });
+    // const messages = $(e.currentTarget).closest('.js-chat-box').find('.js-chat-messages')[0];
+    // messages.scrollTop = messages.scrollHeight;
+    // $(messages).outerHeight(tmpl.messagesInitSize);
+  }
+
+  handleChange = (event) => {
+    this.setState({ message: event.target.value });
   }
 
   renderWelcomeBoxMessage = () => {
@@ -33,32 +95,44 @@ class SChatBoxContained extends Component {
 
   render() {
     let className = 's-chat-box js-chat-box';
-    if (this.props.adminStatus) {
+    if (this.props.adminIsOnline) {
       className += ' s-chat-box-admin-is-online';
     } else {
       className += ' s-chat-box-admin-is-offline';
     }
+    if (this.state.isOpen) {
+      className += ' opened';
+    } else {
+      className += ' hidden';
+    }
 
     return (
-      <div id="s-chat-box" className={className}>
-        <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close">
-          <div className="s-chat-header-title">
-            <span className="s-chat-presence-indicator" />
-            {this.props.headerTitle}
+      <div>
+        <div id="s-chat-box" className={className}>
+          <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close" onClick={this.handleCloseClick}>
+            <div className="s-chat-header-title">
+              <span className="s-chat-presence-indicator" />
+              {this.props.headerTitle}
+            </div>
           </div>
+
+          <div id="s-chat-messages" className="s-chat-messages js-chat-messages">
+            {sChat.settings.welcomeMessage ? this.renderWelcomeBoxMessage() : null}
+            {this.renderMessages()}
+          </div>
+
+          <textarea
+            onKeyDown={this.handleKeyDown}
+            onChange={this.handleChange}
+            value={this.state.value}
+            id="s-chat-submit-input"
+            className={'s-chat-submit-input js-chat-submit-input' + (this.isIOS ? ' s-chat-submit-input-ios' : '')}
+            rows="1"
+            placeholder={sChat.settings.labels.sendPlaceholder}
+          />
         </div>
 
-        <div id="s-chat-messages" className="s-chat-messages js-chat-messages">
-          {sChat.settings.welcomeMessage ? this.renderWelcomeBoxMessage() : null}
-          {this.renderMessages()}
-        </div>
-
-        <textarea
-          id="s-chat-submit-input"
-          className={'s-chat-submit-input js-chat-submit-input' + (this.props.isIOS ? ' s-chat-submit-input-ios' : '')}
-          rows="1"
-          placeholder={sChat.settings.labels.sendPlaceholder}
-        />
+        <SChatBoxOpener onClick={this.handleOpenerClick} isOpen={this.state.isOpen} />
       </div>
     );
   }
@@ -69,20 +143,18 @@ SChatBoxContained.defaultProps = {
 };
 SChatBoxContained.propTypes = {
   headerTitle: React.PropTypes.string,
-  isIOS: React.PropTypes.bool,
   messages: React.PropTypes.array,
-  adminStatus: React.PropTypes.string,
+  adminIsOnline: React.PropTypes.bool,
 };
 
 const SChatBox = createContainer(() => {
-  const messages = sChat.messages;
-  const adminStatus = sChat.adminStatusCurr;
-  const isIOS = navigator.userAgent && navigator.userAgent.match(/iPhone|iPad|iPod/i);
+  const messages = sChat.messages.fetch();
+  // const adminIsOnline = this.adminCollection.find({ status: true });
+  const adminIsOnline = false;
 
   return {
     messages,
-    adminStatus,
-    isIOS,
+    adminIsOnline,
   };
 }, SChatBoxContained);
 export default SChatBox;

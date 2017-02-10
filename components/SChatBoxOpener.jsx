@@ -1,13 +1,18 @@
 import React, { Component } from 'react';
-import { createContainer } from 'meteor/react-meteor-data';
-import sChat from 'meteor/schat:client-core';
+// import { createContainer } from 'meteor/react-meteor-data';
+// import sChat from 'meteor/schat:client-core';
 
-class SChatBoxOpenerContained extends Component {
+export default class SChatBoxOpenerContained extends Component {
   render() {
+    const { isOpen, ...restProps } = this.props; // eslint-disable-line
+    let className = 's-chat-box-opener js-chat-box-open';
+    if (this.props.isOpen) className += ' hidden';
+
     return (
       <div
+        {...restProps}
         id="s-chat-box-opener"
-        className="s-chat-box-opener js-chat-box-open"
+        className={className}
       />
     );
   }
@@ -17,20 +22,5 @@ SChatBoxOpenerContained.defaultProps = {
 
 };
 SChatBoxOpenerContained.propTypes = {
-  isIOS: React.PropTypes.bool,
-  messages: React.PropTypes.array,
-  adminStatus: React.PropTypes.string,
+  isOpen: React.PropTypes.bool,
 };
-
-const SChatBoxOpener = createContainer(() => {
-  const messages = sChat.messages;
-  const adminStatus = sChat.adminStatusCurr;
-  const isIOS = navigator.userAgent && navigator.userAgent.match(/iPhone|iPad|iPod/i);
-
-  return {
-    messages,
-    adminStatus,
-    isIOS,
-  };
-}, SChatBoxOpenerContained);
-export default SChatBoxOpener;
