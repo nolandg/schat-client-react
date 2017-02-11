@@ -52,7 +52,9 @@
       "no-return-assign": "off",
       "quote-props": "off",
       "strict": "off",
-      "react/no-danger": "off"
+      "react/no-danger": "off",
+      "react/sort-comp": "off",
+      "jsx-a11y/no-static-element-interactions": "off"
     },
     "globals": {
       "$": true,
