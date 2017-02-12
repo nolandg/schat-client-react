@@ -63,7 +63,6 @@ class SChatBoxContained extends Component {
 
   handleKeyDown = (event) => {
     if (event.keyCode !== 13) return;
-    console.log(this.state.messageBox);
     if (!this.state.messageBox.trim()) return;
 
     event.preventDefault();
