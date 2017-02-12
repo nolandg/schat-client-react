@@ -4,9 +4,10 @@ import React, { Component } from 'react';
 
 export default class SChatBoxOpenerContained extends Component {
   render() {
-    const { isOpen, ...restProps } = this.props; // eslint-disable-line
+    const { isOpen, adminIsOnline, ...restProps } = this.props; // eslint-disable-line
     let className = 's-chat-box-opener js-chat-box-open';
-    if (this.props.isOpen) className += ' hidden';
+    if (isOpen) className += ' hidden';
+    if (adminIsOnline) className += ' admin-online';
 
     return (
       <div
@@ -23,4 +24,5 @@ SChatBoxOpenerContained.defaultProps = {
 };
 SChatBoxOpenerContained.propTypes = {
   isOpen: React.PropTypes.bool,
+  adminIsOnline: React.PropTypes.bool,
 };

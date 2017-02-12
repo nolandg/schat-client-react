@@ -30,10 +30,20 @@ class SChatBoxContained extends Component {
     }
   }
 
-  componentDidUpdate = () => {
+  componentDidUpdate = (prevProps) => {
     if (this.props.messages.length) {
       this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
+
+    if ((prevProps.messages && !prevProps.messages.length) && (this.props.messages && this.props.messages.length)) {
+      // We went from having no messages to having some so update the initial heights because they will be wrong
+      // if they were set with no messages
+      this.textareaInitSize = $(this.textarea).outerHeight();
+      this.messagesInitSize = $(this.chatMessages).outerHeight();
+    }
+
+    window.addEventListener('resize', () => { this.setMessagesHeight(); });
+    window.addEventListener('orientationchange', () => { this.setMessagesHeight(); });
   }
 
   componentWillUnmount = () => {
@@ -46,15 +56,27 @@ class SChatBoxContained extends Component {
     const messagesSize = $(this.chatMessages).outerHeight();
     const initialSizesSum = this.textareaInitSize + this.messagesInitSize;
     if (textareaSize + messagesSize > initialSizesSum) {
-      $(this.chatMessages).outerHeight(initialSizesSum - textareaSize);
+      this.setMessagesHeight(initialSizesSum - textareaSize);
       this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
+  }
+
+  setMessagesHeight = (height) => {
+    let newHeight = height || 300;
+    const textareaSize = $(this.textarea).outerHeight();
+    const headerSize = $(this.header).outerHeight();
+    const totalNewHeight = newHeight + textareaSize + headerSize;
+    if (totalNewHeight > (window.innerHeight - 10)) {
+      newHeight = window.innerHeight - textareaSize - headerSize - 10;
+    }
+    $(this.chatMessages).outerHeight(newHeight);
   }
 
   handleOpenerClick = () => {
     this.setState({ isOpen: true });
     Meteor.setTimeout(() => {
       this.textarea.focus();
+      this.setMessagesHeight();
     }, 10);
   }
   handleCloseClick = () => {
@@ -76,7 +98,7 @@ class SChatBoxContained extends Component {
 
     this.setState({ messageBox: '' });
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    $(this.chatMessages).outerHeight(this.messagesInitSize);
+    this.setMessagesHeight(this.messagesInitSize);
     Meteor.setTimeout(() => { sChat.autosize.update(this.textarea); }, 10);
   }
 
@@ -123,7 +145,7 @@ class SChatBoxContained extends Component {
     return (
       <div>
         <div id="s-chat-box" className={className}>
-          <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close" onClick={this.handleCloseClick}>
+          <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close" onClick={this.handleCloseClick} ref={(div) => { this.header = div; }} >
             <div className="s-chat-header-title">
               <span className="s-chat-presence-indicator" />
               {this.props.options.labels.headerTitle}
@@ -147,7 +169,7 @@ class SChatBoxContained extends Component {
           />
         </div>
 
-        <SChatBoxOpener onClick={this.handleOpenerClick} isOpen={this.state.isOpen} />
+        <SChatBoxOpener onClick={this.handleOpenerClick} isOpen={this.state.isOpen} adminIsOnline={this.props.adminIsOnline} />
       </div>
     );
   }
@@ -167,9 +189,8 @@ const SChatBox = createContainer((props) => {
   }
   sChat.subscribe();
   const messages = sChat.messages ? sChat.messages.fetch() : [];
-
-  // const adminIsOnline = this.adminCollection.find({ status: true });
-  const adminIsOnline = false;
+  const onlineAdmins = sChat.adminCollection.find({ 'status.online': true }).fetch();
+  const adminIsOnline = !!onlineAdmins.length;
 
   return {
     messages,
