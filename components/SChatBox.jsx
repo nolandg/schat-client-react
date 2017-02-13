@@ -38,8 +38,10 @@ class SChatBoxContained extends Component {
     if ((prevProps.messages && !prevProps.messages.length) && (this.props.messages && this.props.messages.length)) {
       // We went from having no messages to having some so update the initial heights because they will be wrong
       // if they were set with no messages
-      this.textareaInitSize = $(this.textarea).outerHeight();
-      this.messagesInitSize = $(this.chatMessages).outerHeight();
+      Meteor.setTimeout(() => {
+        this.textareaInitSize = $(this.textarea).outerHeight();
+        this.messagesInitSize = $(this.chatMessages).outerHeight();
+      }, 10);
     }
 
     window.addEventListener('resize', () => { this.setMessagesHeight(); });
@@ -70,6 +72,7 @@ class SChatBoxContained extends Component {
       newHeight = window.innerHeight - textareaSize - headerSize - 10;
     }
     $(this.chatMessages).outerHeight(newHeight);
+    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
   }
 
   handleOpenerClick = () => {
@@ -77,7 +80,8 @@ class SChatBoxContained extends Component {
     Meteor.setTimeout(() => {
       this.textarea.focus();
       this.setMessagesHeight();
-    }, 10);
+      this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }, 350);
   }
   handleCloseClick = () => {
     this.setState({ isOpen: false });
@@ -109,7 +113,7 @@ class SChatBoxContained extends Component {
   renderWelcomeBoxMessage = () => {
     return (
       <div id="s-chat-box-welcome-message" className="s-chat-box-welcome-message s-chat-message-item">
-        <div id="s-chat-box-welcome-avatar" className="s-chat-box-welcome-avatar s-chat-message-item-avatar" />
+        {this.props.avatar}
         <div id="s-chat-box-welcome-message-text" className="s-chat-box-welcome-message-text message">
           {sChat.settings.welcomeMessage}
         </div>
@@ -119,7 +123,7 @@ class SChatBoxContained extends Component {
 
   renderMessages = () => {
     return this.props.messages.map((m) => {
-      const avatar = !m.isFromClient ? <div className="s-chat-message-item-avatar" key="avatar" /> : null;
+      const avatar = !m.isFromClient ? this.props.avatar : null;
       return [
         avatar,
         <div key="message" className={'s-chat-message-item' + (m.isFromClient ? ' s-chat-message-item-client' : '')}>
@@ -181,6 +185,7 @@ SChatBoxContained.propTypes = {
   options: React.PropTypes.object,
   messages: React.PropTypes.array,
   adminIsOnline: React.PropTypes.bool,
+  avatar: React.PropTypes.node,
 };
 
 const SChatBox = createContainer((props) => {
