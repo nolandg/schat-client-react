@@ -10,151 +10,107 @@ class SChatBoxContained extends Component {
     super(props);
     this.state = {
       isOpen: false,
-      inputValue: '',
+      textareaValue: '',
     };
   }
 
   componentDidMount = () => {
-    autosize(this.textarea);
     this.textarea.addEventListener('autosize:resized', this.handleTextareaResized);
-    this.textareaInitSize = $(this.textarea).outerHeight();
-    this.messagesInitSize = $(this.chatMessages).outerHeight();
+    autosize(this.textarea);
+    window.addEventListener('resize', () => { this.scrollToBottom(); });
+    window.addEventListener('orientationchange', () => { this.scrollToBottom(); });
   }
 
   componentDidUpdate = (prevProps) => {
-    if (this.props.messages.length) {
-      this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
+    autosize.update(this.textarea);
 
-    if ((prevProps.messages && !prevProps.messages.length) && (this.props.messages && this.props.messages.length)) {
-      // We went from having no messages to having some so update the initial heights because they will be wrong
-      // if they were set with no messages
-      Meteor.setTimeout(() => {
-        this.textareaInitSize = $(this.textarea).outerHeight();
-        this.messagesInitSize = $(this.chatMessages).outerHeight();
-      }, 10);
+    if (prevProps.messages.length !== this.props.messages.length) {
+      this.scrollToBottom();
     }
-
-    window.addEventListener('resize', () => { this.setMessagesHeight(); });
-    window.addEventListener('orientationchange', () => { this.setMessagesHeight(); });
   }
 
   componentWillUnmount = () => {
     this.textarea.removeEventListener('autosize:resized', this.handleTextareaResized);
-    autosize.destroy(this.find('.s-chat-submit-input'));
+    autosize.destroy(this.find('.schat-submit-input'));
   }
 
   handleTextareaResized = () => {
-    const textareaSize = $(this.textarea).outerHeight();
-    const messagesSize = $(this.chatMessages).outerHeight();
-    const initialSizesSum = this.textareaInitSize + this.messagesInitSize;
-    if (textareaSize + messagesSize > initialSizesSum) {
-      this.setMessagesHeight(initialSizesSum - textareaSize);
-      this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
+    this.scrollToBottom();
   }
 
-  setMessagesHeight = (height) => {
-    let newHeight = height || 300;
-    const textareaSize = $(this.textarea).outerHeight();
-    const headerSize = $(this.header).outerHeight();
-    const totalNewHeight = newHeight + textareaSize + headerSize;
-    if (totalNewHeight > (window.innerHeight - 10)) {
-      newHeight = window.innerHeight - textareaSize - headerSize - 10;
-    }
-    $(this.chatMessages).outerHeight(newHeight);
-    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+  scrollToBottom = () => {
+    this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
   }
 
   handleOpenerClick = () => {
     this.setState({ isOpen: true });
     Meteor.setTimeout(() => {
       this.textarea.focus();
-      this.setMessagesHeight();
-      this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+      autosize.update(this.textarea);
+      this.scrollToBottom();
     }, 350);
   }
+
   handleCloseClick = () => {
     this.setState({ isOpen: false });
   }
 
   handleKeyDown = (event) => {
     if (event.keyCode !== 13) return;
-    if (!this.state.inputValue.trim()) return;
+    if (!this.state.textareaValue.trim()) return;
 
     event.preventDefault();
-    sChat.addMessage(this.state.inputValue);
+    sChat.addMessage(this.state.textareaValue);
 
-    this.setState({ inputValue: '' });
-    this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    this.setMessagesHeight(this.messagesInitSize);
+    this.setState({ textareaValue: '' });
     Meteor.setTimeout(() => { autosize.update(this.textarea); }, 10);
   }
 
   handleChange = (event) => {
-    this.setState({ inputValue: event.target.value });
+    this.setState({ textareaValue: event.target.value });
+    autosize.update(this.textarea);
   }
 
-  renderWelcomeBoxMessage = () => {
+  renderWelcomeMessage = () => {
+    return this.renderMessage({ isFromClient: false, msg: this.props.settings.welcomeMessage });
+  }
+
+  renderMessage = (message) => {
     return (
-      <div id="s-chat-box-welcome-message" className="s-chat-box-welcome-message s-chat-message-item">
-        {this.props.avatar}
-        <div id="s-chat-box-welcome-message-text" className="s-chat-box-welcome-message-text message">
-          {sChat.settings.welcomeMessage}
-        </div>
+      <div className={'message' + (message.isFromClient ? ' from-client' : '')} key={message._id}>
+        {!message.isFromClient ? this.props.avatar : null}
+        <span className="text">{message.msg}</span>
       </div>
     );
   }
 
-  renderMessages = () => {
-    return this.props.messages.map((m) => {
-      const avatar = !m.isFromClient ? this.props.avatar : null;
-      return [
-        avatar,
-        <div key="message" className={'s-chat-message-item' + (m.isFromClient ? ' s-chat-message-item-client' : '')}>
-          <div className="message">{m.msg}</div>
-        </div>,
-      ];
-    });
-  }
-
   render() {
-    let className = 's-chat-box js-chat-box';
-    if (this.props.adminIsOnline) {
-      className += ' s-chat-box-admin-is-online';
-    } else {
-      className += ' s-chat-box-admin-is-offline';
-    }
-    if (this.state.isOpen) {
-      className += ' opened';
-    } else {
-      className += ' hidden';
-    }
+    const settings = this.props.settings;
+    const className = 'schat-box' +
+      (this.props.adminIsOnline ? ' online' : '') +
+      (this.state.isOpen ? ' open' : '');
 
     return (
-      <div>
-        <div id="s-chat-box" className={className}>
-          <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close" onClick={this.handleCloseClick} ref={(div) => { this.header = div; }} >
-            <div className="s-chat-header-title">
-              <span className="s-chat-presence-indicator" />
-              {this.props.settings.labels.headerTitle}
-            </div>
+      <div className="schat-wrapper">
+        <div className={className}>
+
+          <div className="header" onClick={this.handleCloseClick} ref={(div) => { this.headerDiv = div; }} >
+            <span className="presence-indicator" />
+            <span className="text">{settings.labels.headerTitle}</span>
           </div>
 
-          <div id="s-chat-messages" className="s-chat-messages js-chat-messages" ref={(div) => { this.chatMessages = div; }} >
-            {sChat.settings.welcomeMessage ? this.renderWelcomeBoxMessage() : null}
-            {this.renderMessages()}
+          <div className="messages" ref={(div) => { this.messagesDiv = div; }} >
+            {this.renderWelcomeMessage()}
+            {this.props.messages.map((m) => { return this.renderMessage(m); })}
           </div>
 
           <textarea
             ref={(textarea) => { this.textarea = textarea; }}
             onKeyDown={this.handleKeyDown}
             onChange={this.handleChange}
-            value={this.state.inputValue}
-            id="s-chat-submit-input"
-            className={'s-chat-submit-input js-chat-submit-input' + (this.state.isIOS ? ' s-chat-submit-input-ios' : '')}
+            value={this.state.textareaValue}
             rows="1"
-            placeholder={sChat.settings.labels.sendPlaceholder}
+            placeholder={settings.labels.sendPlaceholder}
           />
         </div>
 

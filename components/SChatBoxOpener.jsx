@@ -3,14 +3,13 @@ import React, { Component } from 'react';
 export default class SChatBoxOpener extends Component {
   render() {
     const { isOpen, adminIsOnline, ...restProps } = this.props; // eslint-disable-line
-    let className = 's-chat-box-opener js-chat-box-open';
-    if (isOpen) className += ' hidden';
-    if (adminIsOnline) className += ' admin-online';
+    const className = 'opener' +
+      (adminIsOnline ? ' online' : '') +
+      (isOpen ? ' open' : '');
 
     return (
       <div
         {...restProps}
-        id="s-chat-box-opener"
         className={className}
       />
     );
