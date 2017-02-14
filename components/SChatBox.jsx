@@ -1,7 +1,8 @@
 import { Meteor } from 'meteor/meteor';
 import React, { Component } from 'react';
 import { createContainer } from 'meteor/react-meteor-data';
-import sChat from 'meteor/schat:client-core';
+import autosize from 'autosize';
+import sChat from '../sChat';
 import SChatBoxOpener from './SChatBoxOpener';
 
 class SChatBoxContained extends Component {
@@ -9,25 +10,15 @@ class SChatBoxContained extends Component {
     super(props);
     this.state = {
       isOpen: false,
-      messageBox: '',
-      isIOS: false,
+      inputValue: '',
     };
   }
 
   componentDidMount = () => {
-    sChat.autosize(this.textarea);
+    autosize(this.textarea);
     this.textarea.addEventListener('autosize:resized', this.handleTextareaResized);
     this.textareaInitSize = $(this.textarea).outerHeight();
     this.messagesInitSize = $(this.chatMessages).outerHeight();
-
-    // Set the isIOS state based on user agent.
-    // We can't do this earlier because then it would attempt to access user agent on the server
-    // This way the component will render exactly the same on both sides
-    // and then add the proper ios class after it's mounted
-    const userAgentMatch = navigator.userAgent && navigator.userAgent.match(/iPhone|iPad|iPod/i);
-    if (userAgentMatch && userAgentMatch.length) {
-      this.setState({ isIOS: true });
-    }
   }
 
   componentDidUpdate = (prevProps) => {
@@ -50,7 +41,7 @@ class SChatBoxContained extends Component {
 
   componentWillUnmount = () => {
     this.textarea.removeEventListener('autosize:resized', this.handleTextareaResized);
-    sChat.autosize.destroy(this.find('.s-chat-submit-input'));
+    autosize.destroy(this.find('.s-chat-submit-input'));
   }
 
   handleTextareaResized = () => {
@@ -89,25 +80,19 @@ class SChatBoxContained extends Component {
 
   handleKeyDown = (event) => {
     if (event.keyCode !== 13) return;
-    if (!this.state.messageBox.trim()) return;
+    if (!this.state.inputValue.trim()) return;
 
     event.preventDefault();
-    sChat.ddp.call(
-      'addChatMessage',
-      this.state.messageBox,
-      sChat.clientAppId,
-      sChat.userSessionId,
-      true // is from client
-    );
+    sChat.addMessage(this.state.inputValue);
 
-    this.setState({ messageBox: '' });
+    this.setState({ inputValue: '' });
     this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     this.setMessagesHeight(this.messagesInitSize);
-    Meteor.setTimeout(() => { sChat.autosize.update(this.textarea); }, 10);
+    Meteor.setTimeout(() => { autosize.update(this.textarea); }, 10);
   }
 
   handleChange = (event) => {
-    this.setState({ messageBox: event.target.value });
+    this.setState({ inputValue: event.target.value });
   }
 
   renderWelcomeBoxMessage = () => {
@@ -152,7 +137,7 @@ class SChatBoxContained extends Component {
           <div id="s-chat-box-header" className="s-chat-box-header js-chat-box-close" onClick={this.handleCloseClick} ref={(div) => { this.header = div; }} >
             <div className="s-chat-header-title">
               <span className="s-chat-presence-indicator" />
-              {this.props.options.labels.headerTitle}
+              {this.props.settings.labels.headerTitle}
             </div>
           </div>
 
@@ -165,7 +150,7 @@ class SChatBoxContained extends Component {
             ref={(textarea) => { this.textarea = textarea; }}
             onKeyDown={this.handleKeyDown}
             onChange={this.handleChange}
-            value={this.state.messageBox}
+            value={this.state.inputValue}
             id="s-chat-submit-input"
             className={'s-chat-submit-input js-chat-submit-input' + (this.state.isIOS ? ' s-chat-submit-input-ios' : '')}
             rows="1"
@@ -182,7 +167,7 @@ class SChatBoxContained extends Component {
 SChatBoxContained.defaultProps = {
 };
 SChatBoxContained.propTypes = {
-  options: React.PropTypes.object,
+  settings: React.PropTypes.object,
   messages: React.PropTypes.array,
   adminIsOnline: React.PropTypes.bool,
   avatar: React.PropTypes.node,
@@ -190,16 +175,13 @@ SChatBoxContained.propTypes = {
 
 const SChatBox = createContainer((props) => {
   if (!sChat.initialized) {
-    sChat.init(props.siteId, props.options);
+    sChat.init(props.settings);
   }
   sChat.subscribe();
-  const messages = sChat.messages ? sChat.messages.fetch() : [];
-  const onlineAdmins = sChat.adminCollection.find({ 'status.online': true }).fetch();
-  const adminIsOnline = !!onlineAdmins.length;
 
   return {
-    messages,
-    adminIsOnline,
+    messages: sChat.fetchMessages(),
+    adminIsOnline: sChat.fbAdminIsOnline() || sChat.adminIsOnline(),
   };
 }, SChatBoxContained);
 export default SChatBox;

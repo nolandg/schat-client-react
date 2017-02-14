@@ -59,7 +59,8 @@
     "globals": {
       "$": true,
       "fbq": true,
-      "Assets": true
+      "Assets": true,
+      "_": true
     },
     "env": {
       "browser": true,

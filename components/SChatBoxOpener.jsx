@@ -1,8 +1,6 @@
 import React, { Component } from 'react';
-// import { createContainer } from 'meteor/react-meteor-data';
-// import sChat from 'meteor/schat:client-core';
 
-export default class SChatBoxOpenerContained extends Component {
+export default class SChatBoxOpener extends Component {
   render() {
     const { isOpen, adminIsOnline, ...restProps } = this.props; // eslint-disable-line
     let className = 's-chat-box-opener js-chat-box-open';
@@ -19,10 +17,10 @@ export default class SChatBoxOpenerContained extends Component {
   }
 }
 
-SChatBoxOpenerContained.defaultProps = {
+SChatBoxOpener.defaultProps = {
 
 };
-SChatBoxOpenerContained.propTypes = {
+SChatBoxOpener.propTypes = {
   isOpen: React.PropTypes.bool,
   adminIsOnline: React.PropTypes.bool,
 };

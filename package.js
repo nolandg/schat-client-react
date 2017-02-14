@@ -11,9 +11,5 @@ Package.describe({
 Package.onUse(function(api) {
     api.versionsFrom('1.4.2');
     api.use('ecmascript');
-    // api.use('templating');
-    api.use('reactive-var');
-    api.use('schat:client-core@1.2.0');
-    api.imply('schat:client-core@1.2.0');
     api.mainModule('client-react.js');
 });
