@@ -12,6 +12,9 @@ class SChatBoxContained extends Component {
       isOpen: false,
       textareaValue: '',
     };
+    if (Meteor.isClient) {
+      this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
   }
 
   componentDidMount = () => {
@@ -38,14 +41,24 @@ class SChatBoxContained extends Component {
     this.scrollToBottom();
   }
 
+  handleFocus = () => {
+    if (!this.isIOS) return;
+    $(this.textarea).css({ maxHeight: '320px' });
+  }
+
+  handleBlur = () => {
+    if (!this.isIOS) return;
+    $(this.textarea).css({ maxHeight: '' });
+  }
+
   scrollToBottom = () => {
     this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
   }
 
   handleOpenerClick = () => {
     this.setState({ isOpen: true });
+    this.textarea.focus();
     Meteor.setTimeout(() => {
-      this.textarea.focus();
       autosize.update(this.textarea);
       this.scrollToBottom();
     }, 350);
@@ -105,6 +118,8 @@ class SChatBoxContained extends Component {
           </div>
 
           <textarea
+            onFocus={this.handleFocus}
+            onBlur={this.handleBlur}
             ref={(textarea) => { this.textarea = textarea; }}
             onKeyDown={this.handleKeyDown}
             onChange={this.handleChange}
