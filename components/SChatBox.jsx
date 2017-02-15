@@ -14,6 +14,7 @@ class SChatBoxContained extends Component {
     };
     if (Meteor.isClient) {
       this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      this.isIPhone = /iPhone/.test(navigator.userAgent) && !window.MSStream;
     }
   }
 
@@ -42,13 +43,13 @@ class SChatBoxContained extends Component {
   }
 
   handleFocus = () => {
-    if (!this.isIOS) return;
-    $(this.textarea).css({ maxHeight: '320px' });
+    if (!this.isIPhone) return;
+    $(this.sChatBoxDiv).css({ 'max-height': '320px' });
   }
 
   handleBlur = () => {
-    if (!this.isIOS) return;
-    $(this.textarea).css({ maxHeight: '' });
+    if (!this.isIPhone) return;
+    $(this.sChatBoxDiv).css({ 'max-height': '' });
   }
 
   scrollToBottom = () => {
@@ -57,19 +58,23 @@ class SChatBoxContained extends Component {
 
   handleOpenerClick = () => {
     this.setState({ isOpen: true });
-    this.textarea.focus();
     Meteor.setTimeout(() => {
       autosize.update(this.textarea);
       this.scrollToBottom();
-    }, 350);
+      $(this.textarea).click();
+    }, 400);
+  }
+
+  handleTextAreaClick = () => {
+    $(this.textarea).focus();
   }
 
   handleCloseClick = () => {
     this.setState({ isOpen: false });
   }
 
-  handleKeyDown = (event) => {
-    if (event.keyCode !== 13) return;
+  handleKeyPress = (event) => {
+    if (event.key !== 'Enter') return;
     if (!this.state.textareaValue.trim()) return;
 
     event.preventDefault();
@@ -105,7 +110,7 @@ class SChatBoxContained extends Component {
 
     return (
       <div className="schat-wrapper">
-        <div className={className}>
+        <div className={className} ref={(div) => { this.sChatBoxDiv = div; }}>
 
           <div className="header" onClick={this.handleCloseClick} ref={(div) => { this.headerDiv = div; }} >
             <span className="presence-indicator" />
@@ -121,7 +126,8 @@ class SChatBoxContained extends Component {
             onFocus={this.handleFocus}
             onBlur={this.handleBlur}
             ref={(textarea) => { this.textarea = textarea; }}
-            onKeyDown={this.handleKeyDown}
+            onKeyPress={this.handleKeyPress}
+            onClick={this.handleTextAreaClick}
             onChange={this.handleChange}
             value={this.state.textareaValue}
             rows="1"
