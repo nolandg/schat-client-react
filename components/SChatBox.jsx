@@ -44,7 +44,7 @@ class SChatBoxContained extends Component {
 
   handleFocus = () => {
     if (!this.isIPhone) return;
-    $(this.sChatBoxDiv).css({ 'max-height': '320px' });
+    $(this.sChatBoxDiv).css({ 'max-height': '280px' });
   }
 
   handleBlur = () => {
