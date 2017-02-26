@@ -61,7 +61,9 @@ class SChatBoxContained extends Component {
     Meteor.setTimeout(() => {
       autosize.update(this.textarea);
       this.scrollToBottom();
-      $(this.textarea).click();
+      if (!this.isIPhone) {
+        $(this.textarea).click();
+      }
     }, 400);
   }
 
